@@ -1,0 +1,266 @@
+<!doctype html>
+<html>
+
+<head>
+    <link rel="stylesheet" type="..text/css" href="upload.css">
+    <link rel="stylesheet" type="..text/css" href="datepicker.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+    <script src="datepicker.js"></script>
+    <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
+    <script src="http://ajax.aspnetcdn.com/ajax/jquery.validate/1.14.0/jquery.validate.js"></script>
+    <meta charset="utf-8">
+    <title>Untitled Document</title>
+    <style>
+        table {
+            border-collapse: collapse;
+        }
+        
+        th {
+            background-color: #999;
+        }
+        
+        .page {
+            border: 1px solid #000;
+            width: 20px;
+            height: 20px;
+            margin: 10px;
+            float: left;
+        }
+        
+        a {
+            text-decoration: none;
+        }
+        
+        .editable {
+            border: 0px;
+            height: 100%;
+            cursor: pointer;
+        }
+    </style>
+
+
+
+    <script>
+        $(document).ready(function() {
+            var id = 0;
+            var dt = 0;
+            var page = 1;
+            var prevData = "";
+            var postData = "";
+            $(function() {
+                $("#dat").datepicker({
+                    dateFormat: "yy" + '-' + "mm" + '-' + "dd"
+                });
+
+            });
+
+            $.ajax({
+                type: "POST",
+                url: "page.php",
+                data: "",
+                success: function(data) {
+                    dat = "";
+                    for (var i = 1; i <= data; i++) {
+                        dat += "<a v=" + i + " href='#' class= 'pager'><div class='page'><strong>" + i + "</strong></div></a>";
+                    }
+                    $("#paginate").html(dat);
+                }
+            });
+
+            $('#myform').validate({
+                rules: {
+                    name: "required",
+                    email: {
+                        required: true,
+                        email: true
+                    },
+                },
+                messages: {
+                    name: "Name is required",
+                    email: "Enter correct Email"
+                }
+            });
+            var myvar = setInterval(function() {
+                ajx(id, dt, page);
+            }, 500);
+
+
+            /*Code to inline*/
+            $(document).on("click", ".editable", function() {
+                clearInterval(myvar);
+                //console.log();
+                $fieldname = $(this).attr('toEdit');
+                $(this).attr("readonly", false);
+                prevData = $(this).val();
+
+            });
+
+            $(document).on("blur", ".editable", function() {
+                myvar = setInterval(function() {
+                    ajx(id, dt, page);
+                }, 500);
+                rowId = $(this).parent('td').parent('tr').eq(0).attr('id');
+                postData = $(this).val();
+                if (compareData(prevData, postData)) {
+                    if (update(rowId, $(this).attr('toEdit'), postData)) {
+
+                    }
+                }
+                $(this).attr("readonly", true);
+
+            });
+
+            /*END of CODE*/
+
+            $('#myform').submit(function() {
+                return false;
+            });
+            $.post(
+                'script to execute',
+                'values to send',
+                function(result) {});
+            $('#myform').submit(function() {
+                return false;
+            });
+
+            $('#sub').click(function() {
+                $.post(
+                    $('#myform').attr('action'),
+                    $('#myform :input').serializeArray(),
+                    function(result) {
+                        $('#result').html(result);
+                        $('#name').val('');
+                        $('#email').val('');
+                        $('#dat').val('');
+                        $('#message').val('');
+                        $('#result').css("display", "inline").fadeOut(3000);
+                    }
+                );
+            });
+            $(document).on("click", ".pager", function(event) {
+                event.preventDefault();
+                page = $(this).attr("v");
+                clearInterval(myvar);
+                myvar = setInterval(function() {
+                    ajx(id, dt, page);
+                }, 500);
+                //tId++;
+
+            });
+
+            $('#id').click(function(event) {
+                event.preventDefault();
+                dt = 0;
+                id++;
+                clearInterval(myvar);
+                myvar = setInterval(function() {
+                    ajx(id, dt, page);
+                }, 500);
+                //tId++;
+
+            });
+            $('#dat').click(function(event) {
+                event.preventDefault();
+                id = 0;
+                dt++;
+                clearInterval(myvar);
+                myvar = setInterval(function() {
+                    ajx(id, dt, page);
+                }, 500);
+                //tId++;
+
+            });
+
+            function ajx(id, dt, page) {
+                //console.log(id);
+                $.ajax({
+                    type: "POST",
+                    url: "demo.php?id=" + id + "&dt=" + dt + "&page=" + page,
+                    data: "",
+                    dataType: "json",
+                    success: function(data) {
+                        var len = data.length;
+                        //console.log(len);
+                        var dat = " ";
+                        for (var i = 0; i < len; i++) {
+                            dat += "<tr id = " + data[i][0] + "><td>" + data[i][0] + " </td><td><input type='text' value=" + data[i][1] + " readonly='true' class='editable' toEdit = 'name'></td><td><input type='text' value=" + data[i][2] + " readonly='true' class='editable' toEdit = 'email'></td><td><input type='text' vlaue=" + data[i][3] + " readonly='true' class='editable' toEdit = 'dat'></td><td><input type='text' value=" + data[i][4] + " readonly='true' class='editable' toEdit = 'msg'></td></tr>";
+                        }
+                        $("#tbody").html(dat);
+                    }
+                });
+            }
+        });
+
+        function compareData(prevData, postData) {
+
+            if (prevData == postData) {
+                return false;
+            } else {
+                console.log('compareData');
+                return true;
+            }
+
+        }
+
+        function update(id, field, data) {
+            console.log(id + " " + field + " " + data);
+            $.ajax({
+                type: "POST",
+                url: "update.php?id=" + id + "&field=" + field + "&data=" + data,
+                data: "",
+                success: function(data) {
+                    alert(data);
+                }
+            });
+            return true;
+        }
+    </script>
+</head>
+
+<body>
+    <center>
+        <table border="1" id="tbl" class="tbl" cellpadding="10px">
+            <tr>
+                <th> <a href="#" id="id"> Id</th> <th> Name </th> <th> Email </th> <th><a href="#" id="dat"> Date </th> <th>Message</th>
+           </tr>
+           <tbody id="tbody"></tbody>
+       </table>
+       <div id="paginate"></div>
+       <div id="frm">
+        <form id="myform" action="demo1.php" method="POST">
+         <table  class="two" id="tbl" width="250" length="150" border="1" cellpadding="10px" align="center" style="margin-top:15px;">
+          <tr>
+            <th height="43" colspan="2" align="center" scope="col">Enter the Details</th>
+        </tr>
+        <tr>
+            <td width="57">Name</td>
+            <td width="127"><input type="text" name="name" id="name" baseline-alignment:"baseline"></td>
+        </tr>
+        <tr>
+            <td>Email</td>
+            <td><input type="text" name="email" id="email" ></td>
+        </tr>
+
+        <tr>
+            <td height="37">Date</td>
+            <td><input type="text" name="dat" id="dat" required placeholder="YYYY/MM/DD"></td>
+        </tr>
+        <tr>
+            <td>Message</td>
+            <td><textarea name="message" id="message" rows="2" column="0"></textarea></td>
+        </tr>
+        <tr>
+            <td colspan="2" align="center"> <input type="button" name="sub" id="sub" value="Insert"></td>
+        </tr>
+    </table> 
+</form>
+<span id="result">
+</span>
+<div id="flash"></div>
+
+<div id="msg" style="color: #FFFFFF;"></div>
+</div>
+</center>
+</body>
+</html>
